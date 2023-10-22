@@ -1,0 +1,712 @@
+--------------BAĞLANTILAR------------------
+
+https://www.youtube.com/watch?v=DjJyV2XpuFk&list=PLQVXoXFVVtp1v1_D_8ocGOsWFGvK1Ha-E&index=5
+
+------------------TANIM--------------------
+
+observer : Observable nesnesindeki akışı izleyen/tüketen fonksiyondur
+
+subject : Bir Observable 'ın birden fazla observer'a sahip olmasıdır. Tüm observerlar aynı veriye sahip olur. Üç farklı türü vardır; BehaviorSubject, ReplaySubject, AsyncSubject
+
+cold observer: Bir observable'ın her bir subscriber'ları için ayrı ayrı işlem yapmasıdır.
+
+hot observer: Bir observable'ın bütün subscriber'ları için ortak veri/akış göndermesidir.
+
+----------------
+
+const obs= new Observable<number>(data => {}) -> Observable sınıfına sadece number türünde veri girişine izin verir.
+
+----------------
+
+const obs = new Observable<number>(data => {data.next(1)}) -> next fonksiyonu observable sınıfı içersinde veri eklemeyi sağlar.
+
+---------------
+
+const obs = new Observable<number>(data => {data.complete()}) -> complete fonksiyonu 
+observable nesnesinin veri akışının bittiğini belirtir.
+
+---------------
+
+obs.subscribe(data => console.log(data)) -> Observable nesnesindeki verileri manipüle etmek için subscribe(Abone) olunur.
+
+-------------Subject Türleri---------------
+
+BehaviorSubject : Akışa abone olan observer'ın akıştaki bir önceki veriden başlayarak gelen verileri almasını sağlar.
+
+->
+
+const subject = new BehaviourSubject("Yusuf")
+
+subject.subscribe(data => {console.log(`ObserverA ${data}`)})
+subject.next(3)
+subject.next(5)
+
+<-
+
+------------------
+
+ReplaySubject: BehaviorSubject'te Observar girdiği akışta bir önceki veriyi alarak devam ediyordu. ReplaySubject ise istenildiği kadar bir önceki veriyi alabilmektedir.
+
+->
+
+let data: any = "Can Boz"
+const subject = new BehaviourSubject(n) -> Önceden var olan en az 'n' tane veriyi al ve devam et
+
+subject.subscribe(data => {console.log(`ObserverA ${data}`)})
+subject.next(3)
+subject.next(5)
+
+<-
+
+-----------------
+
+AsyncSubject: Akıştaki son değerin alınabilmesi için kullanılan Subject türüdür. Akıştaki sonuncu veriyi alabilmek için complete() fonksiyonunun tetiklenmesini bekler.
+
+->
+
+let data: any = "Can Boz"
+const subject = new AsyncSubject()
+
+subject.subscribe(data => {console.log(`ObserverA ${data}`)})
+subject.next(3)
+subject.next(5)
+
+complete()
+
+-output-> ObserverA 5
+
+------------------
+
+Scheduler: Bir aboneliğin ne zaman başlayağacını ve verinin ne zaman observer'lara iletileceğini kontrol eden nesnedir. Üç bileşenden oluşur :Execution Context, Clock, Exucution Policy
+
+Execution Context: Görevin nerde ve ne zaman çalıştırılacağını gösterir.
+
+Clock: Scheduler, now() fonksiyonuyla sanal olarak mevcut zamanın bilgisinin alınmasını sağlar Observer'lar bu zamansal bilgiye uyarak çalışırlar.
+
+Execution Policy: Belirli politakalara göre görevlerin nasıl saklanacağını ve hangi sırayla alınacağından sorumludur.
+
+---Çok önemli olmayan Shceduler türleri---
+
+queueScheduler: Yapılacak işi kuyruğa alır. Belli bir sıra ile arka arkaya çalıştırılacak işler için kullanılır.
+
+asapScheduler: Micro tasklar için kullanılır. Mevcut işten sonra ve bir sonraki işten önce çalışşır. Asenkron dönüşümler için kullanılır.
+
+asyncSheduler: Zaman tabanlı işlemlerde kullanılır. SetTimeout fonksiyonu ile çalışır haliyle veriler observer'a asenkron iletilir
+
+animationFrameScheduler: Tarayıcının bir sonraki içeriği yeniden boyamadan önce tetiklenen bir scheduler türüdür
+
+
+
+
+------------------ OPERATÖRLER --------------------
+
+-->Creation Operators (Oluşturma Operatörleri)
+
+ajax: Herhangi bir endpoint'e yapılan bir istek neticesinde gelen sonuçları Observable olarak döndüren fonksiyondur.
+
+->
+
+ajax.getJSON("https://jsonplaceholder.typicode.com/posts").subscribe(data => conole.log(data)) --> veriyi alır ve observable nesnesi olarak döndürür 
+
+ajax({
+ url: ".....",
+ method: "post"
+}) --> veriye veri ekler.
+
+<-
+
+---------------------
+
+bindCallback: Özünde bir operatör olmasada yapılan işlemleri neticesinde callbak fonksiyonları yakalar ve observable nesnesi olarak döndürür.
+
+->
+
+NOT// declare var $: any -> jquery kullanmamıza olanak sağlar. (Class dışına yazılır)
+
+const obs: (url: string) => Observable<any[]> = bindCallback($.getJSON)
+
+obs("https://jsonplaceholder.typicode.com/posts").subscribe(data => console.log(data))
+
+<-
+
+-----------------------
+
+defer: defer, bir Observable nesnesini, observer abone olduğunda oluşturmamızı ve her bir observer için yeni bir Observable nesnesi oluşturmamızı sağlar. Bir observer subscribe olana kadar bekler ve olunduktan sonra bir Observable oluşturur. Bunu her abone için yeniden yapar
+
+defer(() => Observable.of(a, b, c))
+
+-----------------------
+
+empty: boş bir Observable nesnesi oluşturur.
+
+->
+
+const result = empty()
+
+<-
+
+-----------------------
+
+from: herhangi bir dizyi alıp geriye Observable döndüren bir operatördür
+
+->
+
+const sayilar = [5, 10, 15]
+const obs = from(sayilar)
+obs.subscribe(data => console.log(data))
+
+<-
+
+-----------------------
+
+fromEvent: Herhangi bir nesnenin belirtilern event'ini yakalayarak Observable nesnesi olarak sunan operatördür.
+
+fromEvent(element,"click")
+
+->
+
+const obs = fromEvent(button,"click")
+obs.subscribe(e => console.log(e))
+
+<-
+
+-----------------------
+
+generate: Verilen şarta göre döngü oluşturarak Observabl edöndüren bir operatördür.
+
+generate(1,x=> x < 3, x=> x + 1)
+
+->
+
+const obs = generate(100, x=> x > 0, x = x - 3)
+obs.subscribe(data => console.log(data))
+
+<-
+
+----------------------
+
+interval: Belirtilen sayısal değere karşılık gelen zaman aralığındai periyot oluşturan bir operatördür.
+
+interval(1000) -> ms cinsinden verilmesi gerekir.
+
+->
+
+const obs = interval(5000)
+obs.subscribe(data => console.log(data))
+
+NOT// data o anki kaçıncı periyotta olduğunu gösterir 
+
+<-
+
+---------------------
+
+of: Verilen herhangi bir türden değerleri Observable nesnesine dönüştürür
+
+of(1,2,3)
+
+->
+
+const obs = of(1,2,3)
+obs.subscribe(data => console.log(data))
+
+<-
+
+--------------------
+
+range, Belirtilen bir aralıkta dizisel değer yayan Observable nesnesi döndürür
+
+range(1,10)
+
+->
+
+const obs = range(404,50)
+obs.subscribe(data => console.log(data))
+
+<-
+
+NOT// 404 -> 50 doğru eleman oluşturur
+
+--------------------
+
+throwError: Hiçbir öğe barındırmayan ve bir hata fırlatan Observable oluşturur.
+
+throwError(e)
+
+->
+
+throwError(new Error("Örnek Hata")).subscribe(data => console.log(data))
+
+<-
+
+--------------------
+
+timer: ms cinsinden belirtilen süre kadara sonra veriyi yayyacak olan Observable nesnesi döndürür.
+
+timer(3000, 1000)
+
+->
+
+timer(3000, 250).subscribe(()=> console.log("Merhaba Dünya!"))
+
+<-
+
+Not// 3000ms sonra çalıştır, 250ms'de bir tekrar et.
+
+-------------------
+
+iif: iki Observable arasında şarta bağlı seçim yapar.
+
+iif(case,true,false)
+
+->
+
+let state: boolean = true
+
+const obs = iif(()=> state,of(3,5,7), of(10,11,12))
+obs.subscribe(data => console.log(data)
+
+<-
+
+
+
+
+
+
+
+
+
+
+-------------Join Creation Operators-----------------
+
+combineLatest: Verilen tüm Observable'ların aıştaki en sonuncu değerlerini yakalayarak bir kombinasyon yaratan operatördür.
+
+->
+
+const obs1= of(1,46,8)
+const obs2= of(45,32,9)
+const obs3= of(34,24,44)
+
+const combine = combineLatest(obs1, obs2, obs3)
+combine.subscribe(data => console.log(data)
+
+<-
+
+--------------------
+
+concat: Verilen tüm Observable'ları sırasıyla yayan Observable oluşturur.
+
+->
+
+const obs1= of(31,38,8)
+const obs2= of(67,32,43)
+const obs3= of(23,56,18)
+
+const realObs = concat(obs1, obs2, obs3)
+realObs.subscribe(data => console.log(data))
+
+<-
+
+-------------------
+
+forkJoin: Observable'ların tamamlanmasını bekler ve en son yayınlanan sonuncu değerlerin elde edilmesini sağlar.
+
+->
+
+const obs1= of(31,38,8)
+const obs2= of(67,32,43)
+const obs3= of(23,56,18)
+
+const realObs= forkJoin(obs1, obs2, obs3)
+realObs.subscribe(data => console.log(data))
+
+<-
+
+-------------------
+
+merge: Observable'ları yatay düzlemde birleştirerek tek bir Observable oluşturur, concat operatöründen farkı hangi observable daha hızlı akışı bitirirse sıraya önce o eklenir.
+yani veriler düzensiz gelir.
+yani hızlı olan kazansın :)
+
+->
+
+const obs1= of(31,38,8)
+const obs2= of(67,32,43)
+const obs3= of(23,56,18)
+
+const realObs= merge(obs1, obs2, obs3)
+realObs.subscribe(data => console.log(data))
+
+->
+
+-------------------
+
+partition: Observable'ı belirli şarta göre, şartı karşılayanlar ve  karşılamayanlar olmak üzere ikiye ayırır.
+
+->
+
+const obs1= of(31,38,8, 33, 30, 21, 57)
+const [obsOk, obsNo] = partition(obs1, x => x % 3 == 0)
+obsOk.subscribe(data => console.log(data + "Şarta uyanlar"))
+obsNo.subscribe(data => console.log(data + "Şarta uymayanlar"))
+
+<-
+
+------------------
+
+race: ilk yayına başlayan Observable'a abone olur. 
+
+->
+
+const obs1 = interval(1000).pipe(mapTo("yusuf"))
+const obs2 = interval(250).pipe(mapTo("ahmet"))
+const obs3 = interval(2000).pipe(mapTo("hilmi"))
+
+race(obs1, obs2, obs3).subscribe(data => console.log(data))
+
+<-
+
+------------------
+
+zip: Birden fazla Observable yayınındaki verileri dizi olarak döndüren opertatördür
+
+->
+
+const obs1= of(31,38,8)
+const obs2= of(67,32,43)
+const obs3= of(23,56,18)
+
+zip(obs1, obs2, obs3).subscribe(data => console.log(data))
+
+output-> [31,67,23],[38,32,56],[8,43,18]
+
+<-
+
+-------------------
+
+pipe: Kod içerisinde yaygın olarak kullanılan birden fazla operatör dizisi varsa eğer pipe fonksiyonu kullanılabilir.
+
+->
+
+const obs= of(31,38,8,67,32,43,23,56,18)
+obs.pipe(filter(x => x % 3 == 0), map(x => x + ' değeri')).subscribe(data => console.log(data))
+
+<-
+
+-------------------
+
+audit:Bir süre için Observable akışındaki değerler üzerinde işlem yapmamıza izin verir ve ardından en sonuncu(yeni) değerleri yayınlar
+
+->
+
+const obs1 = interval(1000)
+const realobs = obs1.pipe(audit(x => interval(2000)), map(x => x + ' değeri'))
+realobs.subscribe(data => console.log(data))
+
+<-
+
+--------------------
+
+auditTime: audit operatörünün parametreli halidir
+
+->
+
+const obs1 = interval(1000)
+const realobs = obs1.pipe(auditTime(2000), map(x => x + ' değeri'))
+realobs.subscribe(data => console.log(data))
+
+<-
+
+--------------------
+
+debounce: Akışta değerlerin zaman aşımı süresini belirleyebilmek için kullanılan operatördür.
+
+->
+
+const obs = fromEvent(document, "click")
+obs.pipe(debounce(x => interval(250))).subscibe(data => console.log("Tıklandı...."))
+
+<-
+
+--------------------
+
+debounceTime: debounce operatörünün parametreli halidir
+
+->
+
+const obs = fromEvent(document, "click")
+obs.pipe(debounceTime(250).subscibe(data => console.log("Tıklandı...."))
+
+<-
+
+-------------------
+
+distinct: Akıştaki verilerden tekrar edenleri tekil olarak döndüren operatördür.
+
+->
+
+const obs = of(13123,31231231,13123,13123)
+obs.pipe(distinct( x => x)).subscibe(data => console.log(data))
+
+<-
+
+--------------------
+
+distinctUntilChanged: Akıştaki verileri değişiklik olana kadar tetikleyen operatördür.
+
+[1,1,2,2,3,3,4,4] -> 1,2,3,4
+
+-------------------
+
+distinctUntilKeyChanged: Akıştaki objelerden verilen key'e göre değişiklik olana kadar tekilleştiren operatördür.
+
+->
+
+interface Person{
+ age: number,
+ name: string
+}
+
+const obs = of<Person>(
+   { age: 10, name: "Yusuf" },
+   { age: 10, name: "Yusuf" },
+   { age: 34, name: "Yusuf" },
+   { age: 34, name: "Yusuf" },
+   { age: 10, name: "Yusuf" },
+   { age: 56, name: "Yusuf" },
+   { age: 56, name: "Yusuf" },
+   { age: 56, name: "Yusuf" },
+   { age: 31, name: "Yusuf" },
+   { age: 23, name: "Yusuf" }
+).pipe(distinctUntilKeyChanged("age").subscribe(data => console.log(data)))
+
+output-> { age: 10, name: "Yusuf" },{ age: 34, name: "Yusuf" },{ age: 56, name: "Yusuf" },{ age: 56, name: "Yusuf" },{ age: 31, name: "Yusuf" },{ age: 23, name: "Yusuf" }
+
+<-
+
+-------------------
+
+elementAt: Akıştaki verilerden index numarası verileni döndüren operatördür.
+
+->
+
+const obs = of(1,2,4,62,55345,3244,123,34,132,54,6768,175,45)
+obs.pipe(elemenAt(5)).subscribe(data => console.log(data))
+
+output-> 3244
+
+<-
+
+-------------------
+
+filter: Observable'da ki verileri belirli bir koşula göre yayan operatördür.Filtreleme yapar.
+
+->
+
+const obs = of("ahmet","mehmet","hilmi","gençay","yusuf")
+obs.pipe(filter(x => x.indexOf("a") === -1)).subscribe(data => console.log(data))
+
+<-
+
+-------------------
+
+first: Observable'da ki ilk değeri getirir
+
+->
+
+const obs = of(1,2,3).pipe(first()).subscribe(data => console.log(data))
+
+output-> 1
+
+<-
+
+-------------------
+
+ignoreElements: Observable tarafından yayılan tüm öğeleri tok sayar. Yalnızca complete ve error çıktılarını yakalar.
+
+->
+
+const obs= of(1,2,3)
+
+obs.pipe(ignoreElements).subscribe(data => {
+
+ error: error => console.log(error)
+ complete: () => console.log("akış bitti....")
+
+})
+
+<-
+
+------------------
+
+last: Observable'da ki en son veriyi alır.
+
+->
+
+const obs = of(12,233,24343,5665,4324)
+obs.pipe(last()).subscribe(data => console.log(data))
+
+output-> 4324
+
+<-
+
+-----------------
+
+sample: Periyodik zaman aralıkları içinde bir Observable tarafından yayılan en son öğreyi yayınlar.
+
+->
+
+const seconds = interval(1000)
+const obs = fromEvent(document, "click")
+const results = seconds.pipe(sample(obs))
+results.subscribe(data => console.log(data))
+
+<-
+
+-----------------
+
+sampleTime: sample operatörünün parametreli halidir.
+
+->
+
+const obs = fromEvent(document, "click")
+const results = obs.pipe(sampleTime(1000))
+results.subscribe(data => console.log(data))
+
+<-
+
+-----------------
+
+single: Bu operatör neticesinde bildirilen şarta uygun birden fazla değer söz konuysa hata verecek yahut herhangi bir değer yoksa 'undifined' dönecektir. Verilen şarta uygun sade ve sadece tek bir değer döndürmelidir.
+
+->
+
+const obs = range(1, 10)
+obs.pipe(single(x => x == 10)).subscribe(data => {
+
+ next: data => console.log(data)
+ error: error => console.log(error)
+})
+
+output-> 10
+
+<-
+
+----------------
+
+startWith: observable verilerinin başına veri ekler.
+
+->
+
+const obs = of("Yusuf","Taha","Ravza")
+obs.pipe(startWith("İlayda")).subscribe(data => console.log(data))
+
+output-> 
+
+ İlayda
+ Yusuf
+ Taha
+ Ravza
+
+<-
+
+----------------
+
+endWith: observable verilerinin sonuna veri ekler.
+
+->
+
+const obs = of("Yusuf","Taha","Ravza")
+obs.pipe(endWith("İlayda")).subscribe(data => console.log(data))
+
+output-> 
+
+ Yusuf
+ Taha
+ Ravza
+ İlayda
+
+<-
+
+----------------
+
+skip: Observable'da ki içine yazılan(x) ilk x kadar değeri atlar.
+
+->
+
+const obs= of(1,2,323,33,434,65)
+obs.pipe(skip(5)).subscribe(data => console.log(data))
+
+output-> 65
+
+<-
+
+----------------
+
+skipWhile: İçindeki koşul true olduğu sürece değer atlar.
+
+->
+
+const obs= of(1,2,3,4,5,6)
+obs.pipe(skipWhile(x => x<4)).subscribe(data => console.log(data))
+
+output-> 
+
+5
+6
+
+<-
+
+----------------
+
+take: Observable'da ki içine yazılan(x) ilk x kadar değeri alır.
+
+->
+
+const obs = of(1,2,3,4,5,6,7,8,9,10)
+obs.pipe(take(3)).subscribe(data => console.log(data))
+
+output-> 
+
+1
+2
+3
+
+<-
+
+----------------
+
+takeLast: Observable'da ki içine yazılan(x) sondan x kadar değeri alır.
+
+->
+
+const obs = of(1,2,3,4,5,6,7,8,9,10)
+obs.pipe(takeLast()).subscribe(data => console.log(data))
+
+output-> 
+
+10
+
+<-
+
+---------------
+
+takeWhile: İçindeki koşul true olduğu sürece değer alır.
+
+->
+
+const obs = of(1,2,3,4,5,6,7,8,9,10)
+obs.pipe(takeWhile(x => x>5)).subscribe(data => console.log(data))
+
+output-> 
+
+6
+7
+8
+9
+10
+
+<-
+
+
+
+
